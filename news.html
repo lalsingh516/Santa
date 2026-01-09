@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LaL Kesri | Hindi News</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root{
+  --red:#d32f2f;
+  --bg:#f2f2f2;
+  --card:#ffffff;
+  --text:#111;
+  --muted:#555;
+}
+body.dark{
+  --bg:#0e0e0e;
+  --card:#1b1b1b;
+  --text:#f1f1f1;
+  --muted:#aaa;
+}
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+/* TOP BAR */
+.top-bar{
+  background:var(--red);
+  color:white;
+  padding:10px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.logo{
+  font-size:22px;
+  font-weight:800;
+}
+.controls{
+  display:flex;
+  gap:6px;
+}
+select,input,button{
+  padding:6px;
+  border:none;
+  border-radius:4px;
+  outline:none;
+}
+
+/* NAV BAR */
+.nav{
+  background:#fff;
+  overflow-x:auto;
+  white-space:nowrap;
+  border-bottom:1px solid #ddd;
+}
+body.dark .nav{background:#111;border-color:#333;}
+.nav button{
+  background:none;
+  border:none;
+  padding:10px 12px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+/* SLIDER */
+.slider{
+  width:100%;
+  height:240px;
+  overflow:hidden;
+  position:relative;
+}
+.slide{
+  width:100%;
+  height:240px;
+  display:none;
+  position:absolute;
+  top:0;
+  left:0;
+}
+.slide img{
+  width:100%;
+  height:240px;
+  object-fit:cover;
+}
+.slide-title{
+  position:absolute;
+  bottom:0;
+  width:100%;
+  padding:12px;
+  background:linear-gradient(to top,rgba(0,0,0,0.85),transparent);
+  color:white;
+  font-size:16px;
+  font-weight:600;
+}
+
+/* BADGES */
+.live{
+  background:red;
+  color:white;
+  font-size:11px;
+  padding:2px 6px;
+  border-radius:3px;
+  margin-right:6px;
+}
+
+/* TRENDING */
+.trending{
+  padding:10px;
+  background:#fff;
+  margin:10px;
+  border-radius:6px;
+}
+body.dark .trending{background:#1b1b1b;}
+.trending h3{margin:0 0 8px 0;}
+.trending div{
+  padding:6px 0;
+  border-bottom:1px solid #eee;
+  cursor:pointer;
+}
+
+/* NEWS GRID */
+.container{
+  padding:10px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:10px;
+}
+.card{
+  background:var(--card);
+  border-radius:6px;
+  overflow:hidden;
+  box-shadow:0 2px 4px rgba(0,0,0,0.1);
+  cursor:pointer;
+}
+.card img{
+  width:100%;
+  height:180px;
+  object-fit:cover;
+  background:#ddd;
+}
+.card-content{
+  padding:10px;
+}
+.card-content h3{
+  margin:0 0 6px 0;
+  font-size:15px;
+}
+.card-content p{
+  margin:0;
+  font-size:13px;
+  color:var(--muted);
+}
+
+.loader{
+  text-align:center;
+  padding:20px;
+  font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="top-bar">
+  <div class="logo">LaL Kesri</div>
+  <div class="controls">
+    <select id="feedSelect"></select>
+    <input type="text" id="searchInput" placeholder="Search">
+    <button onclick="toggleDark()">🌙</button>
+  </div>
+</div>
+
+<div class="nav" id="navBar"></div>
+
+<div class="slider" id="sliderBox"></div>
+
+<div class="trending">
+  <h3>📌 Trending</h3>
+  <div id="trendingBox"></div>
+</div>
+
+<div class="container" id="newsBox"></div>
+
+<script>
+const feeds = {
+  "Breaking":"https://www.bhaskar.com/rss-v1--category-1061.xml",
+  "International":"https://www.bhaskar.com/rss-v1--category-1125.xml",
+  "Business":"https://www.bhaskar.com/rss-v1--category-1051.xml",
+  "Sports":"https://www.bhaskar.com/rss-v1--category-1053.xml",
+  "Entertainment":"https://www.bhaskar.com/rss-v1--category-3998.xml",
+  "Bollywood":"https://www.bhaskar.com/rss-v1--category-11215.xml",
+  "Tech":"https://www.bhaskar.com/rss-v1--category-5707.xml",
+  "Auto":"https://www.bhaskar.com/rss-v1--category-10711.xml",
+  "Jobs":"https://www.bhaskar.com/rss-v1--category-11945.xml",
+  "Women":"https://www.bhaskar.com/rss-v1--category-1532.xml",
+  "Happy Life":"https://www.bhaskar.com/rss-v1--category-7911.xml",
+  "Utility":"https://www.bhaskar.com/rss-v1--category-11616.xml",
+  "Opinion":"https://www.bhaskar.com/rss-v1--category-1944.xml",
+  "Fake News":"https://www.bhaskar.com/rss-v1--category-10891.xml",
+  "Magazine":"https://www.bhaskar.com/rss-v1--category-1057.xml",
+  "DB Original":"https://www.bhaskar.com/rss-v1--category-4587.xml",
+  "Rajasthan":"https://www.bhaskar.com/rss-v1--category-1740.xml",
+  "MP":"https://www.bhaskar.com/rss-v1--category-1739.xml",
+  "UP":"https://www.bhaskar.com/rss-v1--category-2052.xml",
+  "Bihar":"https://www.bhaskar.com/rss-v1--category-3679.xml",
+  "Chhattisgarh":"https://www.bhaskar.com/rss-v1--category-1741.xml",
+  "Haryana":"https://www.bhaskar.com/rss-v1--category-1742.xml",
+  "Delhi":"https://www.bhaskar.com/rss-v1--category-7140.xml",
+  "Maharashtra":"https://www.bhaskar.com/rss-v1--category-2318.xml",
+  "Jharkhand":"https://www.bhaskar.com/rss-v1--category-3682.xml",
+  "Punjab":"https://www.bhaskar.com/rss-v1--category-1743.xml",
+  "Gujarat":"https://www.bhaskar.com/rss-v1--category-2314.xml",
+  "Chandigarh":"https://www.bhaskar.com/rss-v1--category-11649.xml",
+  "Himachal":"https://www.bhaskar.com/rss-v1--category-12084.xml"
+};
+
+let currentFeed="";
+let allArticles=[];
+const feedSelect=document.getElementById("feedSelect");
+const newsBox=document.getElementById("newsBox");
+const sliderBox=document.getElementById("sliderBox");
+const trendingBox=document.getElementById("trendingBox");
+const navBar=document.getElementById("navBar");
+const searchInput=document.getElementById("searchInput");
+
+/* Populate dropdown + nav */
+for(let key in feeds){
+  let opt=document.createElement("option");
+  opt.value=feeds[key];
+  opt.textContent=key;
+  feedSelect.appendChild(opt);
+
+  let btn=document.createElement("button");
+  btn.textContent=key;
+  btn.onclick=()=>{feedSelect.value=feeds[key];currentFeed=feeds[key];loadNews();};
+  navBar.appendChild(btn);
+}
+currentFeed=feedSelect.value;
+
+feedSelect.addEventListener("change",()=>{
+  currentFeed=feedSelect.value;
+  loadNews();
+});
+
+/* Search */
+searchInput.addEventListener("input",()=>{
+  const q=searchInput.value.toLowerCase();
+  const filtered=allArticles.filter(n=>n.title.toLowerCase().includes(q));
+  renderCards(filtered);
+});
+
+/* Dark */
+function toggleDark(){
+  document.body.classList.toggle("dark");
+}
+
+/* Load News */
+async function loadNews(){
+  newsBox.innerHTML='<div class="loader">Loading...</div>';
+  sliderBox.innerHTML="";
+  trendingBox.innerHTML="";
+  allArticles=[];
+
+  const api=`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(currentFeed)}`;
+
+  try{
+    const res=await fetch(api);
+    const data=await res.json();
+
+    if(!data.items || data.items.length===0){
+      newsBox.innerHTML='<div class="loader">No news found</div>';
+      return;
+    }
+
+    let slidesHTML="";
+    let trendingHTML="";
+
+    data.items.forEach((item,index)=>{
+      const title=item.title || "";
+      const link=item.link || "#";
+
+      // IMAGE FIX LOGIC
+      let img="";
+      if(item.enclosure && item.enclosure.link){
+        img=item.enclosure.link;
+      }else if(item.thumbnail){
+        img=item.thumbnail;
+      }else{
+        img="https://via.placeholder.com/400x200?text=News";
+      }
+
+      const summary=item.description.replace(/<[^>]*>?/gm,'').slice(0,130);
+
+      allArticles.push({title,link,img,summary});
+
+      if(index<5){
+        slidesHTML+=`
+        <div class="slide">
+          <img src="${img}" onerror="this.src='https://via.placeholder.com/400x200?text=News'">
+          <div class="slide-title"><span class="live">LIVE</span>${title}</div>
+        </div>`;
+
+        trendingHTML+=`<div onclick="window.open('${link}','_blank')">${title}</div>`;
+      }
+    });
+
+    sliderBox.innerHTML=slidesHTML;
+    trendingBox.innerHTML=trendingHTML;
+    renderCards(allArticles);
+    startSlider();
+
+  }catch(e){
+    console.error(e);
+    newsBox.innerHTML='<div class="loader">Network error</div>';
+  }
+}
+
+/* Render Cards */
+function renderCards(list){
+  let html="";
+  list.forEach((n,i)=>{
+    html+=`
+    <div class="card" onclick="window.open('${n.link}','_blank')">
+      <img src="${n.img}" onerror="this.src='https://via.placeholder.com/400x200?text=News'">
+      <div class="card-content">
+        <h3>${i<3?'<span class="live">LIVE</span>':''}${n.title}</h3>
+        <p>${n.summary}...</p>
+      </div>
+    </div>`;
+  });
+  newsBox.innerHTML=html;
+}
+
+/* Slider */
+let slideIndex=0;
+function startSlider(){
+  const slides=document.querySelectorAll(".slide");
+  slideIndex=0;
+  if(slides.length===0) return;
+  slides.forEach(s=>s.style.display="none");
+  slides[0].style.display="block";
+
+  setInterval(()=>{
+    slides.forEach(s=>s.style.display="none");
+    slideIndex=(slideIndex+1)%slides.length;
+    slides[slideIndex].style.display="block";
+  },3500);
+}
+
+/* Auto refresh */
+setInterval(loadNews,60000);
+
+/* Initial */
+loadNews();
+</script>
+
+</body>
+</html>
